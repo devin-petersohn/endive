@@ -94,16 +94,13 @@ object BaseModel extends Serializable  {
     val dnase: RDD[(String, PeakRecord)] = Preprocess.loadPeakFolder(sc, dnasePath)
       .cache()
 
-    // load rnase data
-    val rnaseq: RDD[(String, RNARecord)] = sc.emptyRDD[(String, RNARecord)]
-
     val sd = DatasetCreationPipeline.getSequenceDictionary(referencePath)
 
-    val cellTypeInfo = new CellTypeSpecific(windowSize, stride, dnase, rnaseq, sd)
+    val cellTypeInfo = new CellTypeSpecific(windowSize, stride, dnase, sc.emptyRDD[(String, RNARecord)], sd)
 
 
     // deepbind does not have creb1 scores so we will hold out for now
-    val fullMatrix: RDD[LabeledWindow] = cellTypeInfo.joinWithSequences(sequences)
+    val fullMatrix: RDD[LabeledWindow] = cellTypeInfo.joinWithDNase(sequences)
       .filter(r => r.win.getTf != "CREB1")
 
     println("Grouping Data to train and test")
